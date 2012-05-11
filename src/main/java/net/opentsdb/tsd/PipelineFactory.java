@@ -54,7 +54,6 @@ public final class PipelineFactory implements ChannelPipelineFactory {
     this.rpchandler = new RpcHandler(tsdb);
   }
 
-  @Override
   public ChannelPipeline getPipeline() throws Exception {
    final ChannelPipeline pipeline = pipeline();
 
