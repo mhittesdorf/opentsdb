@@ -5,13 +5,48 @@
 	<artifactId>opentsdb</artifactId>
 	<version>1.1.1-SNAPSHOT</version>
 	<name>OpenTSDB database</name>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>exec-maven-plugin</artifactId>
+				<groupId>org.codehaus.mojo</groupId>
+				<executions>
+					<execution><!-- Run script that generates BuildData.java -->
+						<id>BuildData</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${basedir}/build-aux/gen_build_data.sh</executable>
+							<arguments>
+								<argument>${basedir}/src/main/java/net/opentsdb/BuildData.java</argument>
+								<argument>net.opentsdb</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.0-beta-9</version>
+			</plugin>
+		</plugins>
+	</build>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.10</version>
-			<type>pom</type>
-			<scope>compile</scope>
+			<version>4.10</version>		
 		</dependency>
 		<dependency>
 			<groupId>com.google.gwt</groupId>
