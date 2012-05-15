@@ -63,11 +63,11 @@ final class TsdbQuery implements Query {
   /** Value used for timestamps that are uninitialized.  */
   private static final int UNSET = -1;
 
-  /** Start time (UNIX timestamp in seconds) on 32 bits ("unsigned" int). */
-  private int start_time = UNSET;
+  /** Start time (UNIX timestamp in milliseconds) on 44 LSB. */
+  private long start_time = UNSET;
 
-  /** End time (UNIX timestamp in seconds) on 32 bits ("unsigned" int). */
-  private int end_time = UNSET;
+  /** End time (UNIX timestamp in milliseconds) on 44 LSB. */
+  private long end_time = UNSET;
 
   /** ID of the metric being looked up. */
   private byte[] metric;
@@ -117,7 +117,7 @@ final class TsdbQuery implements Query {
   }
 
   public void setStartTime(final long timestamp) {
-    if ((timestamp & 0xFFFFFFFF00000000L) != 0) {
+    if ((timestamp & 0xFFFFF00000000000L) != 0) {
       throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
     } else if (end_time != UNSET && timestamp >= getEndTime()) {
       throw new IllegalArgumentException("new start time (" + timestamp
@@ -131,23 +131,23 @@ final class TsdbQuery implements Query {
     if (start_time == UNSET) {
       throw new IllegalStateException("setStartTime was never called!");
     }
-    return start_time & 0x00000000FFFFFFFFL;
+    return start_time & 0x00000000000FFFFFL;
   }
 
   public void setEndTime(final long timestamp) {
-    if ((timestamp & 0xFFFFFFFF00000000L) != 0) {
+    if ((timestamp & 0xFFFFF00000000000L) != 0) {
       throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
     } else if (start_time != UNSET && timestamp <= getStartTime()) {
       throw new IllegalArgumentException("new end time (" + timestamp
           + ") is less than or equal to start time: " + getStartTime());
     }
-    // Keep the 32 bits.
-    end_time = (int) timestamp;
+    // Keep all bits (lower 44 represent timestamp in milliseconds).
+    end_time = timestamp;
   }
 
   public long getEndTime() {
     if (end_time == UNSET) {
-      setEndTime(System.currentTimeMillis() / 1000);
+      setEndTime(System.currentTimeMillis());
     }
     return end_time;
   }

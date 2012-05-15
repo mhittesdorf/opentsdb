@@ -262,7 +262,7 @@ public final class TSDB {
                                             final byte[] value,
                                             final Map<String, String> tags,
                                             final short flags) {
-    if ((timestamp & 0xFFFFFFFF00000000L) != 0) {
+    if ((timestamp & 0xFFFFF00000000000L) != 0) {
       // => timestamp < 0 || timestamp > Integer.MAX_VALUE
       throw new IllegalArgumentException((timestamp < 0 ? "negative " : "bad")
           + " timestamp=" + timestamp
@@ -273,12 +273,12 @@ public final class TSDB {
     IncomingDataPoints.checkMetricAndTags(metric, tags);
     final byte[] row = IncomingDataPoints.rowKeyTemplate(this, metric, tags);
     final long base_time = (timestamp - (timestamp % Const.MAX_TIMESPAN));
-    Bytes.setInt(row, (int) base_time, metrics.width());
-    scheduleForCompaction(row, (int) base_time);
-    final short qualifier = (short) ((timestamp - base_time) << Const.FLAG_BITS
+    Bytes.setInt(row, (int) (base_time/1000), metrics.width());
+    scheduleForCompaction(row, (int) (base_time/1000));
+    final int qualifier = (int) ((timestamp - base_time) << Const.FLAG_BITS
                                      | flags);
     final PutRequest point = new PutRequest(table, row, FAMILY,
-                                            Bytes.fromShort(qualifier), value);
+                                            Bytes.fromInt(qualifier), value);
     // TODO(tsuna): Add a callback to time the latency of HBase and store the
     // timing in a moving Histogram (once we have a class for this).
     return client.put(point);
@@ -367,9 +367,9 @@ public final class TSDB {
    * points in that row, write them back to HBase in a more compact fashion,
    * and delete the individual data points.
    * @param row The row key to re-compact later.  Will not be modified.
-   * @param base_time The 32-bit unsigned UNIX timestamp.
+   * @param base_time The 64-bit unsigned UNIX timestamp.
    */
-  final void scheduleForCompaction(final byte[] row, final int base_time) {
+  final void scheduleForCompaction(final byte[] row, final long base_time) {
     if (enable_compactions) {
       compactionq.add(row);
     }

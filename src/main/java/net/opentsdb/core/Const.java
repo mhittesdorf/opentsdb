@@ -37,8 +37,8 @@ public final class Const {
   /** Mask to select all the FLAG_BITS.  */
   static final short FLAGS_MASK = FLAG_FLOAT | LENGTH_MASK;
 
-  /** Max time delta (in seconds) we can store in a column qualifier.  */
-  public static final short MAX_TIMESPAN = 3600;
+  /** Max time delta (in milliseconds) we can store in a column qualifier.  */
+  public static final int MAX_TIMESPAN = 3600000;
 
   /**
    * Array containing the hexadecimal characters (0 to 9, A to F).

@@ -58,7 +58,7 @@ final class IncomingDataPoints implements WritableDataPoints {
    * Qualifiers for individual data points.
    * The last Const.FLAG_BITS bits are used to store flags (the type of the
    * data point - integer or floating point - and the size of the data point
-   * in bytes).  The remaining MSBs store a delta in seconds from the base
+   * in bytes).  The remaining MSBs store a delta in milliseconds from the base
    * timestamp stored in the row key.
    */
   private short[] qualifiers;
@@ -78,7 +78,7 @@ final class IncomingDataPoints implements WritableDataPoints {
    */
   IncomingDataPoints(final TSDB tsdb) {
     this.tsdb = tsdb;
-    this.qualifiers = new short[3];
+    this.qualifiers = new short[4];
     this.values = new long[3];
   }
 
@@ -353,13 +353,13 @@ final class IncomingDataPoints implements WritableDataPoints {
     }
   }
 
-  private static short delta(final short qualifier) {
-    return (short) ((qualifier & 0xFFFF) >>> Const.FLAG_BITS);
+  private static int delta(final int qualifier) {
+    return (qualifier & 0xFFFFFF) >>> Const.FLAG_BITS;
   }
 
   public long timestamp(final int i) {
     checkIndex(i);
-    return baseTime() + (delta(qualifiers[i]) & 0xFFFF);
+    return baseTime() + (delta(qualifiers[i]) & 0xFFFFFF);
   }
 
   public boolean isInteger(final int i) {

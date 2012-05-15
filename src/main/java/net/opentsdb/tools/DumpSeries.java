@@ -96,7 +96,7 @@ final class DumpSeries {
         for (final ArrayList<KeyValue> row : rows) {
           buf.setLength(0);
           final byte[] key = row.get(0).key();
-          final long base_time = Internal.baseTime(tsdb, key);
+          final long base_time = Internal.baseTime(tsdb, key) * 1000;
           final String metric = Internal.metricName(tsdb, key);
           // Print the row key.
           if (!importformat) {
@@ -156,13 +156,13 @@ final class DumpSeries {
     }
     final byte[] qualifier = kv.qualifier();
     final byte[] cell = kv.value();
-    if (qualifier.length != 2 && cell[cell.length - 1] != 0) {
+    if (qualifier.length != 4 && cell[cell.length - 1] != 0) {
       throw new IllegalDataException("Don't know how to read this value:"
         + Arrays.toString(cell) + " found in " + kv
         + " -- this compacted value might have been written by a future"
         + " version of OpenTSDB, or could be corrupt.");
     }
-    final int nvalues = qualifier.length / 2;
+    final int nvalues = qualifier.length / 4;
     final boolean multi_val = nvalues != 1 && !importformat;
     if (multi_val) {
       buf.append(Arrays.toString(qualifier))
@@ -188,17 +188,17 @@ final class DumpSeries {
       if (multi_val) {
         buf.append("\n    ");
       }
-      final short qual = Bytes.getShort(qualifier, i * 2);
+      final int qual = Bytes.getInt(qualifier, i * 2);
       final byte flags = (byte) qual;
       final int value_len = (flags & 0x7) + 1;
-      final short delta = (short) ((0x0000FFFF & qual) >>> 4);
+      final int delta = ((0x00FFFFFF & qual) >>> 4);
       if (importformat) {
         buf.append(base_time + delta).append(' ');
       } else {
         final byte[] v = multi_val
           ? Arrays.copyOfRange(cell, value_offset, value_offset + value_len)
           : cell;
-        buf.append(Arrays.toString(Bytes.fromShort(qual)))
+        buf.append(Arrays.toString(Bytes.fromInt(qual)))
            .append(' ')
            .append(Arrays.toString(v))
            .append('\t')
@@ -228,7 +228,7 @@ final class DumpSeries {
 
   /** Transforms a UNIX timestamp into a human readable date.  */
   static String date(final long timestamp) {
-    return new Date(timestamp * 1000).toString();
+    return new Date(timestamp).toString();
   }
 
 }
