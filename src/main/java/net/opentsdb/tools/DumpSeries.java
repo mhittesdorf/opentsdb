@@ -12,10 +12,16 @@
 // see <http://www.gnu.org/licenses/>.
 package net.opentsdb.tools;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+
+import net.opentsdb.core.IllegalDataException;
+import net.opentsdb.core.Internal;
+import net.opentsdb.core.Query;
+import net.opentsdb.core.TSDB;
 
 import org.hbase.async.Bytes;
 import org.hbase.async.DeleteRequest;
@@ -23,17 +29,14 @@ import org.hbase.async.HBaseClient;
 import org.hbase.async.KeyValue;
 import org.hbase.async.Scanner;
 
-import net.opentsdb.core.IllegalDataException;
-import net.opentsdb.core.Internal;
-import net.opentsdb.core.Query;
-import net.opentsdb.core.TSDB;
-
 /**
  * Tool to dump the data straight from HBase.
  * Useful for debugging data induced problems.
  */
 final class DumpSeries {
 
+  private static final SimpleDateFormat formatter = new SimpleDateFormat("d MMM yyyy HH:mm:ss:SSS Z");
+  
   /** Prints usage and exits with the given retval. */
   private static void usage(final ArgP argp, final String errmsg,
                             final int retval) {
@@ -188,10 +191,10 @@ final class DumpSeries {
       if (multi_val) {
         buf.append("\n    ");
       }
-      final int qual = Bytes.getInt(qualifier, i * 2);
+      final int qual = Bytes.getInt(qualifier, i * 4);
       final byte flags = (byte) qual;
       final int value_len = (flags & 0x7) + 1;
-      final int delta = ((0x00FFFFFF & qual) >>> 4);
+      final int delta = ((0xFFFFFFFF & qual) >>> 4);
       if (importformat) {
         buf.append(base_time + delta).append(' ');
       } else {
@@ -228,7 +231,7 @@ final class DumpSeries {
 
   /** Transforms a UNIX timestamp into a human readable date.  */
   static String date(final long timestamp) {
-    return new Date(timestamp).toString();
+    return formatter.format(new Date(timestamp));
   }
 
 }
