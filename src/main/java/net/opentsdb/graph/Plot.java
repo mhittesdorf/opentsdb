@@ -34,17 +34,14 @@ public final class Plot {
 
   private static final Logger LOG = LoggerFactory.getLogger(Plot.class);
 
-  /** Mask to use on 32-bit unsigned integers to avoid sign extension.  */
-  private static final long UNSIGNED = 0x00000000FFFFFFFFL;
-
   /** Default (current) timezone.  */
   private static final TimeZone DEFAULT_TZ = TimeZone.getDefault();
 
   /** Start time (UNIX timestamp in seconds) on 32 bits ("unsigned" int). */
-  private final int start_time;
+  private final long start_time;
 
   /** End time (UNIX timestamp in seconds) on 32 bits ("unsigned" int). */
-  private final int end_time;
+  private final long end_time;
 
   /** All the DataPoints we want to plot. */
   private ArrayList<DataPoints> datapoints =
@@ -94,20 +91,20 @@ public final class Plot {
    * @since 1.1
    */
    public Plot(final long start_time, final long end_time, TimeZone tz) {
-    if ((start_time & 0xFFFFFFFF00000000L) != 0) {
+    if ((start_time & 0x0000000000000000L) != 0) {
       throw new IllegalArgumentException("Invalid start time: " + start_time);
-    } else if ((end_time & 0xFFFFFFFF00000000L) != 0) {
+    } else if ((end_time & 0x0000000000000000L) != 0) {
       throw new IllegalArgumentException("Invalid end time: " + end_time);
     } else if (start_time >= end_time) {
       throw new IllegalArgumentException("start time (" + start_time
         + ") is greater than or equal to end time: " + end_time);
     }
-    this.start_time = (int) start_time;
-    this.end_time = (int) end_time;
+    this.start_time = start_time;
+    this.end_time = end_time;
     if (tz == null) {
       tz = DEFAULT_TZ;
     }
-    this.utc_offset = (short) (tz.getOffset(System.currentTimeMillis()) / 1000);
+    this.utc_offset = (short) (tz.getOffset(System.currentTimeMillis()));
   }
 
   /**
@@ -189,10 +186,10 @@ public final class Plot {
       try {
         for (final DataPoint d : datapoints.get(i)) {
           final long ts = d.timestamp();
-          if (ts >= (start_time & UNSIGNED) && ts <= (end_time & UNSIGNED)) {
+          if (ts >= start_time && ts <= end_time) {
             npoints++;
           }
-          datafile.print(ts + utc_offset);
+          datafile.print(ts/1000 + utc_offset);
           datafile.print(' ');
           if (d.isInteger()) {
             datafile.print(d.longValue());
@@ -265,9 +262,9 @@ public final class Plot {
                 + "set xtic rotate\n"
                 + "set output \"").append(basepath + ".png").append("\"\n"
                 + "set xrange [\"")
-        .append(String.valueOf((start_time & UNSIGNED) + utc_offset))
+        .append(String.valueOf((start_time/1000 + utc_offset)))
         .append("\":\"")
-        .append(String.valueOf((end_time & UNSIGNED) + utc_offset))
+        .append(String.valueOf((end_time/1000 + utc_offset)))
         .append("\"]\n");
       if (!params.containsKey("format x")) {
         gp.append("set format x \"").append(xFormat()).append("\"\n");
@@ -336,11 +333,9 @@ public final class Plot {
    * @return The Gnuplot time format string to use.
    */
   private String xFormat() {
-    long timespan = (end_time & UNSIGNED) - (start_time & UNSIGNED);
-    if (timespan < 2100) {  // 35m
+    long timespan = (end_time/1000 - start_time/1000);
+    if (timespan < 86400) {  // 1d
       return "%H:%M:%S";
-    } else if (timespan < 86400) {  // 1d
-      return "%H:%M";
     } else if (timespan < 604800) {  // 1w
       return "%a %H:%M";
     } else if (timespan < 1209600) {  // 2w

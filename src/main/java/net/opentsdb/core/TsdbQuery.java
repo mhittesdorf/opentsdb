@@ -63,10 +63,10 @@ final class TsdbQuery implements Query {
   /** Value used for timestamps that are uninitialized.  */
   private static final int UNSET = -1;
 
-  /** Start time (UNIX timestamp in milliseconds) on 44 LSB. */
+  /** Start time (UNIX timestamp in milliseconds). */
   private long start_time = UNSET;
 
-  /** End time (UNIX timestamp in milliseconds) on 44 LSB. */
+  /** End time (UNIX timestamp in milliseconds). */
   private long end_time = UNSET;
 
   /** ID of the metric being looked up. */
@@ -117,31 +117,31 @@ final class TsdbQuery implements Query {
   }
 
   public void setStartTime(final long timestamp) {
-    if ((timestamp & 0xFFFFF00000000000L) != 0) {
+    if ((timestamp & 0x0000000000000000L) != 0) {
       throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
     } else if (end_time != UNSET && timestamp >= getEndTime()) {
       throw new IllegalArgumentException("new start time (" + timestamp
           + ") is greater than or equal to end time: " + getEndTime());
     }
     // Keep the 32 bits.
-    start_time = (int) timestamp;
+    start_time = timestamp;
   }
 
   public long getStartTime() {
     if (start_time == UNSET) {
       throw new IllegalStateException("setStartTime was never called!");
     }
-    return start_time & 0x00000000000FFFFFL;
+    return start_time;
   }
 
   public void setEndTime(final long timestamp) {
-    if ((timestamp & 0xFFFFF00000000000L) != 0) {
+    if ((timestamp & 0x0000000000000000L) != 0) {
       throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
     } else if (start_time != UNSET && timestamp <= getStartTime()) {
       throw new IllegalArgumentException("new end time (" + timestamp
           + ") is less than or equal to start time: " + getStartTime());
     }
-    // Keep all bits (lower 44 represent timestamp in milliseconds).
+
     end_time = timestamp;
   }
 
@@ -296,8 +296,8 @@ final class TsdbQuery implements Query {
       // We haven't been asked to find groups, so let's put all the spans
       // together in the same group.
       final SpanGroup group = new SpanGroup(tsdb,
-                                            getScanStartTime(),
-                                            getScanEndTime(),
+                                            getScanStartTime() * 1000,
+                                            getScanEndTime() * 1000,
                                             spans.values(),
                                             rate,
                                             aggregator,
@@ -404,7 +404,7 @@ final class TsdbQuery implements Query {
     // but this doesn't really matter.
     // Additionally, in case our sample_interval is large, we need to look
     // even further before/after, so use that too.
-    final long ts = getStartTime() - Const.MAX_TIMESPAN * 2 - sample_interval;
+    final long ts = getStartTime()/1000 - ((Const.MAX_TIMESPAN)/1000) * 2 - sample_interval;
     return ts > 0 ? ts : 0;
   }
 
@@ -418,7 +418,7 @@ final class TsdbQuery implements Query {
     // again that doesn't really matter.
     // Additionally, in case our sample_interval is large, we need to look
     // even further before/after, so use that too.
-    return getEndTime() + Const.MAX_TIMESPAN + 1 + sample_interval;
+    return getEndTime()/1000 + ((Const.MAX_TIMESPAN)/1000) + 1 + sample_interval;
   }
 
   /**

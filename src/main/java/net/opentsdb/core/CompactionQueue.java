@@ -366,7 +366,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       compacted[0] = compact;
       final long base_time = Bytes.getUnsignedInt(compact.key(), metric_width);
       final long cut_off = System.currentTimeMillis() / 1000
-        - Const.MAX_TIMESPAN - 1;
+        - Const.MAX_TIMESPAN/1000 - 1;
       if (base_time > cut_off) {  // If row is too recent...
         return null;              // ... Don't write back compacted.
       }
@@ -570,11 +570,11 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
     // different value).
     int nvalues = 0;
     int val_len = 1;  // Reserve an extra byte for meta-data.
-    short last_delta = -1;  // Time delta, extracted from the qualifier.
+    int last_delta = -1;  // Time delta, extracted from the qualifier.
     int ncells = cells.size();
     for (int i = 0; i < ncells; i++) {
       final Cell cell = cells.get(i);
-      final short delta = (short) ((Bytes.getShort(cell.qualifier) & 0xFFFF)
+      final int delta = ((Bytes.getInt(cell.qualifier) & 0xFFFFFFFF)
                                    >>> Const.FLAG_BITS);
       // Because we sorted `cells' by qualifier, and because the time delta
       // occupies the most significant bits, this should never trigger.
@@ -612,7 +612,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       val_len += cell.value.length;
     }
 
-    final byte[] qualifier = new byte[nvalues * 2];
+    final byte[] qualifier = new byte[nvalues * 4];
     final byte[] value = new byte[val_len];
     // Now populate the arrays by copying qualifiers/values over.
     int qual_idx = 0;
@@ -653,13 +653,13 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       final byte[] qual = kv.qualifier();
       final int len = qual.length;
       final byte[] val = kv.value();
-      if (len == 2) {  // Single-value cell.
+      if (len == 4) {  // Single-value cell.
         // Maybe we need to fix the flags in the qualifier.
         final byte[] actual_val = fixFloatingPointValue(qual[1], val);
         final byte q = fixQualifierFlags(qual[1], actual_val.length);
         final byte[] actual_qual;
         if (q != qual[1]) {  // We need to fix the qualifier.
-          actual_qual = new byte[] { qual[0], q };  // So make a copy.
+          actual_qual = new byte[] { qual[0], q, qual[2], qual[3] };  // So make a copy.
         } else {
           actual_qual = qual;  // Otherwise use the one we already have.
         }
@@ -680,8 +680,8 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       }
       // Now break it down into Cells.
       int val_idx = 0;
-      for (int i = 0; i < len; i += 2) {
-        final byte[] q = new byte[] { qual[i], qual[i + 1] };
+      for (int i = 0; i < len; i += 4) {
+        final byte[] q = new byte[] { qual[i], qual[i + 1], qual[i + 2], qual[i + 3] };
         final int vlen = (q[1] & Const.LENGTH_MASK) + 1;
         final byte[] v = new byte[vlen];
         System.arraycopy(val, val_idx, v, 0, vlen);
