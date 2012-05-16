@@ -61,7 +61,7 @@ final class IncomingDataPoints implements WritableDataPoints {
    * in bytes).  The remaining MSBs store a delta in milliseconds from the base
    * timestamp stored in the row key.
    */
-  private short[] qualifiers;
+  private int[] qualifiers;
 
   /** Each value in the row. */
   private long[] values;
@@ -78,7 +78,7 @@ final class IncomingDataPoints implements WritableDataPoints {
    */
   IncomingDataPoints(final TSDB tsdb) {
     this.tsdb = tsdb;
-    this.qualifiers = new short[4];
+    this.qualifiers = new int[3];
     this.values = new long[3];
   }
 
@@ -160,7 +160,7 @@ final class IncomingDataPoints implements WritableDataPoints {
     // so that all TSDs create rows with the same base time.  Otherwise
     // we'd need to coordinate TSDs to avoid creating rows that cover
     // overlapping time periods.
-    final long base_time = timestamp - (timestamp % Const.MAX_TIMESPAN);
+    final long base_time = (timestamp - (timestamp % Const.MAX_TIMESPAN))/1000;
     // Clone the row key since we're going to change it.  We must clone it
     // because the HBase client may still hold a reference to it in its
     // internal datastructures.
@@ -186,7 +186,7 @@ final class IncomingDataPoints implements WritableDataPoints {
     if (row == null) {
       throw new IllegalStateException("setSeries() never called!");
     }
-    if ((timestamp & 0xFFFFFFFF00000000L) != 0) {
+    if ((timestamp & 0x0000000000000000L) != 0) {
       // => timestamp < 0 || timestamp > Integer.MAX_VALUE
       throw new IllegalArgumentException((timestamp < 0 ? "negative " : "bad")
           + " timestamp=" + timestamp
@@ -219,7 +219,7 @@ final class IncomingDataPoints implements WritableDataPoints {
     }
 
     // Java is so stupid with its auto-promotion of int to float.
-    final short qualifier = (short) ((timestamp - base_time) << Const.FLAG_BITS
+    final int qualifier = (int)((timestamp - base_time * 1000) << Const.FLAG_BITS
                                      | flags);
     qualifiers[size] = qualifier;
     values[size] = (value.length == 8
@@ -228,7 +228,7 @@ final class IncomingDataPoints implements WritableDataPoints {
     size++;
 
     final PutRequest point = new PutRequest(tsdb.table, row, TSDB.FAMILY,
-                                            Bytes.fromShort(qualifier),
+                                            Bytes.fromInt(qualifier),
                                             value);
     // TODO(tsuna): The following timing is rather useless.  First of all,
     // the histogram never resets, so it tends to converge to a certain
@@ -354,12 +354,12 @@ final class IncomingDataPoints implements WritableDataPoints {
   }
 
   private static int delta(final int qualifier) {
-    return (qualifier & 0xFFFFFF) >>> Const.FLAG_BITS;
+    return (qualifier & 0xFFFFFFFF) >>> Const.FLAG_BITS;
   }
 
   public long timestamp(final int i) {
     checkIndex(i);
-    return baseTime() + (delta(qualifiers[i]) & 0xFFFFFF);
+    return baseTime() + (delta(qualifiers[i]) & 0xFFFFFFFF);
   }
 
   public boolean isInteger(final int i) {
