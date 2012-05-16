@@ -186,7 +186,7 @@ final class IncomingDataPoints implements WritableDataPoints {
     if (row == null) {
       throw new IllegalStateException("setSeries() never called!");
     }
-    if ((timestamp & 0x0000000000000000L) != 0) {
+    if ((timestamp & 0xFFFFF00000000000L) != 0) {
       // => timestamp < 0 || timestamp > Integer.MAX_VALUE
       throw new IllegalArgumentException((timestamp < 0 ? "negative " : "bad")
           + " timestamp=" + timestamp

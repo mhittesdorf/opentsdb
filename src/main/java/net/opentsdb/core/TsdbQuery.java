@@ -117,7 +117,7 @@ final class TsdbQuery implements Query {
   }
 
   public void setStartTime(final long timestamp) {
-    if ((timestamp & 0x0000000000000000L) != 0) {
+    if ((timestamp & 0xFFFFF00000000000L) != 0) {
       throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
     } else if (end_time != UNSET && timestamp >= getEndTime()) {
       throw new IllegalArgumentException("new start time (" + timestamp
@@ -135,7 +135,7 @@ final class TsdbQuery implements Query {
   }
 
   public void setEndTime(final long timestamp) {
-    if ((timestamp & 0x0000000000000000L) != 0) {
+    if ((timestamp & 0xFFFFF00000000000L) != 0) {
       throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
     } else if (start_time != UNSET && timestamp <= getStartTime()) {
       throw new IllegalArgumentException("new end time (" + timestamp

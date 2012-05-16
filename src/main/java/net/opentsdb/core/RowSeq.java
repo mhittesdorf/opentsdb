@@ -403,7 +403,7 @@ final class RowSeq implements DataPoints {
     // ---------------------- //
 
     public void seek(final long timestamp) {
-      if ((timestamp & 0x0000000000000000L) != 0) {  // negative or not 32 bits
+      if ((timestamp & 0xFFFFF00000000000L) != 0) {  // negative or not 44 bits
         throw new IllegalArgumentException("invalid timestamp: " + timestamp);
       }
       qual_index = 0;

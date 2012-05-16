@@ -91,9 +91,9 @@ public final class Plot {
    * @since 1.1
    */
    public Plot(final long start_time, final long end_time, TimeZone tz) {
-    if ((start_time & 0x0000000000000000L) != 0) {
+    if ((start_time & 0xFFFFF00000000000L) != 0) {
       throw new IllegalArgumentException("Invalid start time: " + start_time);
-    } else if ((end_time & 0x0000000000000000L) != 0) {
+    } else if ((end_time & 0xFFFFF00000000000L) != 0) {
       throw new IllegalArgumentException("Invalid end time: " + end_time);
     } else if (start_time >= end_time) {
       throw new IllegalArgumentException("start time (" + start_time
