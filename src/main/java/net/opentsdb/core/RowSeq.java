@@ -28,7 +28,7 @@ import org.hbase.async.KeyValue;
 /**
  * Represents a read-only sequence of continuous HBase rows.
  * <p>
- * This class stores in memory the data of one or more continuous
+ * This class stores in memory the data of one or more continuous 
  * HBase rows for a given time series.
  */
 final class RowSeq implements DataPoints {
@@ -146,8 +146,8 @@ final class RowSeq implements DataPoints {
                   + " in addRow with row=" + row + " in this=" + this);
         return;  // Ignore this row, it came out of order.
       }
-      qualifier = (int) ((time_delta << Const.FLAG_BITS)
-                           | (qualifier & Const.FLAGS_MASK));
+      qualifier = (time_delta << Const.FLAG_BITS)
+                           | (qualifier & Const.FLAGS_MASK);
       Bytes.setInt(newquals, qualifier, old_qual_len + i);
     }
     this.qualifiers = newquals;
