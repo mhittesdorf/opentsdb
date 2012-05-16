@@ -17,28 +17,38 @@
       </excludes>
 	 </dependencySet>	 
   </dependencySets>
-  
+   <files>
+     <file>
+      <outputDirectory>.</outputDirectory>
+      <source>${project.basedir}/src/main/bin/tsdb.in</source>
+      <fileMode>755</fileMode>
+      <destName>tsdb</destName>
+      <filtered>true</filtered>
+     </file>
+    </files>
   <fileSets>
     <fileSet>
-       <outputDirectory>conf</outputDirectory>
-       <directory>${project.basedir}/src/main/conf</directory>
+       <outputDirectory>static</outputDirectory>
+       <directory>${project.basedir}/staticroot</directory>
+       <includes>
+       <include>**</include>       
+      </includes>
     </fileSet>   
     <fileSet>
-      <outputDirectory>bin</outputDirectory>
+      <outputDirectory>.</outputDirectory>
       <directory>${project.basedir}/src/main/bin</directory>
       <includes>
-       <include>start.sh</include>
-       <include>stop.sh</include>
-       <include>status.sh</include>
-       <include>metrics_service.rc</include>
-      </includes>
+       <include>mygnuplot.sh</include>
+       <include>create_table.sh</include>
+       </includes>
       <fileMode>755</fileMode>
     </fileSet>
+  
     <fileSet>
-      <outputDirectory>bin</outputDirectory>
-      <directory>${project.basedir}/src/main/bin</directory>
+      <outputDirectory>.</outputDirectory>
+      <directory>${project.basedir}/src/main/resources</directory>
       <includes>
-       <include>metrics-server.rc</include>
+       <include>logback.xml</include>
       </includes>
     </fileSet>
    </fileSets>
