@@ -154,8 +154,8 @@ final class Fsck {
               LOG.error("Invalid qualifier, must be on 2 bytes or more.\n\t"
                         + kv);
               continue;
-            } else if (qual.length > 2) {
-              if (qual.length % 2 != 0) {
+            } else if (qual.length > 4) {
+              if (qual.length % 4 != 0) {
                 errors++;
                 LOG.error("Invalid qualifier for a compacted row, length ("
                           + qual.length + ") must be even.\n\t" + kv);
@@ -168,12 +168,12 @@ final class Fsck {
                 continue;
               }
               // Check all the compacted values.
-              short last_delta = -1;
+              int last_delta = -1;
               short val_idx = 0;  // Where are we in `value'?
               boolean ooo = false;  // Did we find out of order data?
-              for (int i = 0; i < qual.length; i += 2) {
-                final short qualifier = Bytes.getShort(qual, i);
-                final short delta = (short) ((qualifier & 0xFFFF)
+              for (int i = 0; i < qual.length; i += 4) {
+                final int qualifier = Bytes.getInt(qual, i);
+                final int delta = ((qualifier & 0xFFFFFFFF)
                                              >>> Internal.FLAG_BITS);
                 if (delta <= last_delta) {
                   ooo = true;
@@ -217,12 +217,12 @@ final class Fsck {
               }
               continue;  // We done checking a compacted value.
             } // else: qualifier is on 2 bytes, it's an individual value.
-            final short qualifier = Bytes.getShort(qual);
-            final short delta = (short) ((qualifier & 0xFFFF) >>> Internal.FLAG_BITS);
-            final long timestamp = base_time + delta;
+            final int qualifier = Bytes.getInt(qual);
+            final int delta = ((qualifier & 0xFFFFFFFF) >>> Internal.FLAG_BITS);
+            final long timestamp = base_time + delta/1000;
             if (value.length > 8) {
               errors++;
-              LOG.error("Value more than 8 byte long with a 2-byte"
+              LOG.error("Value more than 8 byte long with a 4-byte"
                         + " qualifier.\n\t" + kv);
             }
             // TODO(tsuna): Don't hardcode 0x8 / 0x3 here.
@@ -265,14 +265,14 @@ final class Fsck {
               if (fix) {
                 final byte[] newkey = kv.key().clone();
                 // Fix the timestamp in the row key.
-                final long new_base_time = (timestamp - (timestamp % Const.MAX_TIMESPAN));
+                final long new_base_time = (timestamp - (timestamp % Const.MAX_TIMESPAN))/1000;
                 Bytes.setInt(newkey, (int) new_base_time, metric_width);
-                final short newqual = (short) ((timestamp - new_base_time) << Internal.FLAG_BITS
+                final int newqual = (int) ((timestamp - new_base_time) << Internal.FLAG_BITS
                                                | (qualifier & Internal.FLAGS_MASK));
                 final DeleteOutOfOrder delooo = new DeleteOutOfOrder(kv);
                 if (timestamp < prev.timestamp()) {
                   client.put(new PutRequest(table, newkey, kv.family(),
-                                            Bytes.fromShort(newqual), value))
+                                            Bytes.fromInt(newqual), value))
                     // Only delete the offending KV once we're sure that the new
                     // KV has been persisted in HBase.
                     .addCallbackDeferring(delooo);
@@ -330,23 +330,23 @@ final class Fsck {
    */
   private static final class Seen {
     /** A 32-bit unsigned integer that holds a UNIX timestamp in seconds.  */
-    private int timestamp;
+    private long timestamp;
     /** The raw data point (or points if the KV contains more than 1).  */
     KeyValue kv;
 
     private Seen(final long timestamp, final KeyValue kv) {
-      this.timestamp = (int) timestamp;
+      this.timestamp = timestamp;
       this.kv = kv;
     }
 
     /** Returns the UNIX timestamp (in seconds) as a 32-bit unsigned int.  */
     public long timestamp() {
-      return timestamp & 0x00000000FFFFFFFFL;
+      return timestamp;
     }
 
     /** Updates the UNIX timestamp (in seconds) with a 32-bit unsigned int.  */
     public void setTimestamp(final long timestamp) {
-      this.timestamp = (int) timestamp;
+      this.timestamp = timestamp;
     }
   }
 

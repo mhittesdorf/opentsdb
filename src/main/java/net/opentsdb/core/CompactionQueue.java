@@ -108,7 +108,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       LOG.info("Flushing all old outstanding rows out of " + size + " rows");
     }
     final long now = System.currentTimeMillis();
-    return flush(now / 1000 - Const.MAX_TIMESPAN - 1, Integer.MAX_VALUE);
+    return flush((now - Const.MAX_TIMESPAN - 1)/1000, Integer.MAX_VALUE);
   }
 
   /**
@@ -263,7 +263,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       boolean trivial = true;  // Are we doing a trivial compaction?
       int qual_len = 0;  // Pre-compute the size of the qualifier we'll need.
       int val_len = 1;   // Reserve an extra byte for meta-data.
-      short last_delta = -1;  // Time delta, extracted from the qualifier.
+      int last_delta = -1;  // Time delta, extracted from the qualifier.
       KeyValue longest = row.get(0);  // KV with the longest qualifier.
       int longest_idx = 0;            // Index of `longest'.
       final int nkvs = row.size();
@@ -274,7 +274,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
         // been compacted, potentially partially, so we need to merge the
         // partially compacted set of cells, with the rest.
         final int len = qual.length;
-        if (len != 2) {
+        if (len != 4) {
           trivial = false;
           // We only do this here because no qualifier can be < 2 bytes.
           if (len > longest.qualifier().length) {
@@ -285,7 +285,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
           // In the trivial case, do some sanity checking here.
           // For non-trivial cases, the sanity checking logic is more
           // complicated and is thus pushed down to `complexCompact'.
-          final short delta = (short) ((Bytes.getShort(qual) & 0xFFFF)
+        	final int delta = ((Bytes.getInt(qual) & 0xFFFFFFFF)
                                        >>> Const.FLAG_BITS);
           // This data point has a time delta that's less than or equal to
           // the previous one.  This typically means we have 2 data points
@@ -365,8 +365,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
     if (compacted != null) {  // Caller is interested in the compacted form.
       compacted[0] = compact;
       final long base_time = Bytes.getUnsignedInt(compact.key(), metric_width);
-      final long cut_off = System.currentTimeMillis() / 1000
-        - Const.MAX_TIMESPAN/1000 - 1;
+      final long cut_off = (System.currentTimeMillis() - Const.MAX_TIMESPAN - 1)/1000;
       if (base_time > cut_off) {  // If row is too recent...
         return null;              // ... Don't write back compacted.
       }
@@ -418,10 +417,12 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
     for (final KeyValue kv : row) {
       final byte[] q = kv.qualifier();
       // We shouldn't get into this function if this isn't true.
-      assert q.length == 2: "Qualifier length must be 2: " + kv;
-      final byte[] v = fixFloatingPointValue(q[1], kv.value());
+      assert q.length == 4: "Qualifier length must be 4: " + kv;
+      final byte[] v = fixFloatingPointValue(q[3], kv.value());
       qualifier[qual_idx++] = q[0];
-      qualifier[qual_idx++] = fixQualifierFlags(q[1], v.length);
+      qualifier[qual_idx++] = q[1];
+      qualifier[qual_idx++] = q[2];
+      qualifier[qual_idx++] = fixQualifierFlags(q[3], v.length);
       System.arraycopy(v, 0, value, val_idx, v.length);
       val_idx += v.length;
     }
@@ -840,7 +841,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
           // if the rows aren't old enough.
           if (last_flush - now > Const.MAX_TIMESPAN  // (1)
               || size > maxflushes) {                // (2)
-            flush(now / 1000 - Const.MAX_TIMESPAN - 1, maxflushes);
+            flush((now - Const.MAX_TIMESPAN - 1)/1000, maxflushes);
             if (LOG.isDebugEnabled()) {
               final int newsize = size();
               LOG.debug("flush() took " + (System.currentTimeMillis() - now)

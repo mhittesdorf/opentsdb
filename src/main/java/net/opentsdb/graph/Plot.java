@@ -67,7 +67,7 @@ public final class Plot {
    * Gnuplot always renders timestamps in UTC, so we simply apply a delta
    * to get local time.
    */
-  private final short utc_offset;
+  private final int utc_offset;
 
   /**
    * Constructor.
@@ -104,7 +104,7 @@ public final class Plot {
     if (tz == null) {
       tz = DEFAULT_TZ;
     }
-    this.utc_offset = (short) (tz.getOffset(System.currentTimeMillis()));
+    this.utc_offset = (12 * 60 * 60) + tz.getOffset(System.currentTimeMillis())/1000;
   }
 
   /**
