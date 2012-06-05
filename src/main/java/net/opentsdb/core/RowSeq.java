@@ -19,11 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.hbase.async.Bytes;
 import org.hbase.async.KeyValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a read-only sequence of continuous HBase rows.
@@ -464,14 +463,14 @@ final class RowSeq implements DataPoints {
 
     /** Helper to take a snapshot of the state of this iterator.  */
     int saveState() {
-      return (qual_index << 32) | (value_index & 0xFFFF);
+      return (qual_index << 64) | (value_index & 0xFFFFFFFF);
     }
 
     /** Helper to restore a snapshot of the state of this iterator.  */
     void restoreState(int state) {
-      value_index = (short) (state & 0xFFFF);
-      state >>>= 32;
-      qual_index = (short) state;
+      value_index = (state & 0xFFFFFFFF);
+      state >>>= 64;
+      qual_index = state;
       qualifier = 0;
     }
 

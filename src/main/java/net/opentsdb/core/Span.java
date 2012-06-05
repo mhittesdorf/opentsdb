@@ -219,8 +219,8 @@ final class Span implements DataPoints {
    * @param timestamp A strictly positive 32-bit integer.
    * @return A strictly positive index in the {@code rows} array.
    */
-  private short seekRow(final long timestamp) {
-    short row_index = 0;
+  private int seekRow(final long timestamp) {
+    int row_index = 0;
     RowSeq row = null;
     final int nrows = rows.size();
     for (int i = 0; i < nrows; i++) {
@@ -247,7 +247,7 @@ final class Span implements DataPoints {
   final class Iterator implements SeekableView {
 
     /** Index of the {@link RowSeq} we're currently at, in {@code rows}. */
-    private short row_index;
+    private int row_index;
 
     /** Iterator on the current row. */
     private RowSeq.Iterator current_row;
@@ -277,7 +277,7 @@ final class Span implements DataPoints {
     }
 
     public void seek(final long timestamp) {
-      short row_index = seekRow(timestamp);
+      int row_index = seekRow(timestamp);
       if (row_index != this.row_index) {
         this.row_index = row_index;
         current_row = rows.get(row_index).internalIterator();
@@ -322,7 +322,7 @@ final class Span implements DataPoints {
     private final Aggregator downsampler;
 
     /** Index of the {@link RowSeq} we're currently at, in {@code rows}. */
-    private short row_index;
+    private int row_index;
 
     /** The row we're currently at. */
     private RowSeq.Iterator current_row;
@@ -382,7 +382,7 @@ final class Span implements DataPoints {
       // interval turn out to be integers.  While we do this, compute the
       // average timestamp of all the datapoints in that interval.
       long newtime = 0;
-      final short saved_row_index = row_index;
+      final int saved_row_index = row_index;
       final int saved_state = current_row.saveState();
       // Since we know hasNext() returned true, we have at least 1 point.
       moveToNext();
@@ -429,7 +429,7 @@ final class Span implements DataPoints {
     // ---------------------- //
 
     public void seek(final long timestamp) {
-      short row_index = seekRow(timestamp);
+      int row_index = seekRow(timestamp);
       if (row_index != this.row_index) {
         //LOG.debug("seek from row #" + this.row_index + " to " + row_index);
         this.row_index = row_index;
