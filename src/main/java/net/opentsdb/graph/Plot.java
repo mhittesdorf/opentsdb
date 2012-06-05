@@ -104,7 +104,7 @@ public final class Plot {
     if (tz == null) {
       tz = DEFAULT_TZ;
     }
-    this.utc_offset = (12 * 60 * 60) + tz.getOffset(System.currentTimeMillis())/1000;
+    this.utc_offset = tz.getOffset(System.currentTimeMillis())/1000;
   }
 
   /**

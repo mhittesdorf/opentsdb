@@ -180,7 +180,7 @@ final class RowSeq implements DataPoints {
    * different {@link RowSeq} instances.
    */
   static boolean canTimeDeltaFit(final long time_delta) {
-    return time_delta < 1 << (Integer.SIZE - Const.FLAG_BITS);
+    return time_delta < 1 << (Long.SIZE - Const.FLAG_BITS);
   }
 
   /**
@@ -340,8 +340,8 @@ final class RowSeq implements DataPoints {
        .append(base_time > 0 ? new Date(base_time * 1000) : "no date")
        .append("), [");
     for (short i = 0; i < size; i++) {
-      final short qual = Bytes.getShort(qualifiers, i * 2);
-      buf.append('+').append((qual & 0xFFFF) >>> Const.FLAG_BITS);
+      final int qual = Bytes.getInt(qualifiers, i * 4);
+      buf.append('+').append((qual & 0xFFFFFFFF) >>> Const.FLAG_BITS);
       if (isInteger(i)) {
         buf.append(":long(").append(longValue(i));
       } else {
@@ -363,10 +363,10 @@ final class RowSeq implements DataPoints {
     private int qualifier;
 
     /** Next index in {@link #qualifiers}.  */
-    private short qual_index;
+    private int qual_index;
 
     /** Next index in {@link #values}.  */
-    private short value_index;
+    private int value_index;
 
     /** Pre-extracted base time of this row sequence.  */
     private final long base_time = baseTime();

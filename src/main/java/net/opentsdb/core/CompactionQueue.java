@@ -270,7 +270,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       for (int i = 0; i < nkvs; i++) {
         final KeyValue kv = row.get(i);
         final byte[] qual = kv.qualifier();
-        // If the qualifier length isn't 2, this row might have already
+        // If the qualifier length isn't 4, this row might have already
         // been compacted, potentially partially, so we need to merge the
         // partially compacted set of cells, with the rest.
         final int len = qual.length;
@@ -595,7 +595,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
         for (int j = i - 1; prev == Cell.SKIP; j--) {
           prev = cells.get(j);
         }
-        if (cell.qualifier[1] != prev.qualifier[1]
+        if (cell.qualifier[3] != prev.qualifier[3]
             || !Bytes.equals(cell.value, prev.value)) {
           throw new IllegalDataException("Found out of order or duplicate"
             + " data: cell=" + cell + ", delta=" + delta + ", prev cell="
@@ -656,11 +656,11 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       final byte[] val = kv.value();
       if (len == 4) {  // Single-value cell.
         // Maybe we need to fix the flags in the qualifier.
-        final byte[] actual_val = fixFloatingPointValue(qual[1], val);
-        final byte q = fixQualifierFlags(qual[1], actual_val.length);
+        final byte[] actual_val = fixFloatingPointValue(qual[3], val);
+        final byte q = fixQualifierFlags(qual[3], actual_val.length);
         final byte[] actual_qual;
-        if (q != qual[1]) {  // We need to fix the qualifier.
-          actual_qual = new byte[] { qual[0], q, qual[2], qual[3] };  // So make a copy.
+        if (q != qual[3]) {  // We need to fix the qualifier.
+          actual_qual = new byte[] { qual[0], qual[1], qual[2], q };  // So make a copy.
         } else {
           actual_qual = qual;  // Otherwise use the one we already have.
         }
@@ -683,7 +683,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
       int val_idx = 0;
       for (int i = 0; i < len; i += 4) {
         final byte[] q = new byte[] { qual[i], qual[i + 1], qual[i + 2], qual[i + 3] };
-        final int vlen = (q[1] & Const.LENGTH_MASK) + 1;
+        final int vlen = (q[3] & Const.LENGTH_MASK) + 1;
         final byte[] v = new byte[vlen];
         System.arraycopy(val, val_idx, v, 0, vlen);
         val_idx += vlen;
