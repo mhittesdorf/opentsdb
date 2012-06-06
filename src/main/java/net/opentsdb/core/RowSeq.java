@@ -179,8 +179,7 @@ final class RowSeq implements DataPoints {
    * different {@link RowSeq} instances.
    */
   static boolean canTimeDeltaFit(final long time_delta) {
-    //return time_delta < 1 << (Integer.SIZE - Const.FLAG_BITS);
-	return false;  //WANT ALL ROWS RETURNED!!!
+    return time_delta < 1 << (Integer.SIZE - Const.FLAG_BITS);
   }
 
   /**
