@@ -296,8 +296,8 @@ final class TsdbQuery implements Query {
       // We haven't been asked to find groups, so let's put all the spans
       // together in the same group.
       final SpanGroup group = new SpanGroup(tsdb,
-                                            getScanStartTime() * 1000,
-                                            getScanEndTime() * 1000,
+                                            getScanStartTime(),
+                                            getScanEndTime(),
                                             spans.values(),
                                             rate,
                                             aggregator,
@@ -372,10 +372,10 @@ final class TsdbQuery implements Query {
     // rely on having a few extra data points before & after the exact start
     // & end dates in order to do proper rate calculation or downsampling near
     // the "edges" of the graph.
-    Bytes.setInt(start_row, (int) getScanStartTime(), metric_width);
+    Bytes.setInt(start_row, (int) (getScanStartTime()/1000), metric_width);
     Bytes.setInt(end_row, (end_time == UNSET
                            ? -1  // Will scan until the end (0xFFF...).
-                           : (int) getScanEndTime()),
+                           : (int) (getScanEndTime()/1000)),
                  metric_width);
     System.arraycopy(metric, 0, start_row, 0, metric_width);
     System.arraycopy(metric, 0, end_row, 0, metric_width);
@@ -404,8 +404,8 @@ final class TsdbQuery implements Query {
     // but this doesn't really matter.
     // Additionally, in case our sample_interval is large, we need to look
     // even further before/after, so use that too.
-    final long ts = getStartTime()/1000 - ((Const.MAX_TIMESPAN)/1000) * 2 - sample_interval;
-    return ts > 0 ? ts : 0;
+    final long ts = getStartTime() - (Const.MAX_TIMESPAN * 2 - sample_interval*1000);
+	return ts > 0 ? ts : 0;
   }
 
   /** Returns the UNIX timestamp at which we must stop scanning.  */
@@ -418,7 +418,7 @@ final class TsdbQuery implements Query {
     // again that doesn't really matter.
     // Additionally, in case our sample_interval is large, we need to look
     // even further before/after, so use that too.
-    return getEndTime()/1000 + ((Const.MAX_TIMESPAN)/1000) + 1 + sample_interval;
+    return getEndTime() + (Const.MAX_TIMESPAN + 1000) + sample_interval*1000;
   }
 
   /**

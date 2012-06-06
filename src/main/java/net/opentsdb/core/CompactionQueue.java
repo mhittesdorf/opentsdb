@@ -300,7 +300,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
           // We don't need it below for complex compactions, so we update it
           // only here in the `else' branch.
           final byte[] v = kv.value();
-          val_len += floatingPointValueToFix(qual[1], v) ? 4 : v.length;
+          val_len += floatingPointValueToFix(qual[3], v) ? 4 : v.length;
         }
         qual_len += len;
       }
@@ -365,7 +365,7 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
     if (compacted != null) {  // Caller is interested in the compacted form.
       compacted[0] = compact;
       final long base_time = Bytes.getUnsignedInt(compact.key(), metric_width);
-      final long cut_off = (System.currentTimeMillis() - Const.MAX_TIMESPAN - 1)/1000;
+      final long cut_off = (System.currentTimeMillis() - Const.MAX_TIMESPAN - 1000)/1000;
       if (base_time > cut_off) {  // If row is too recent...
         return null;              // ... Don't write back compacted.
       }

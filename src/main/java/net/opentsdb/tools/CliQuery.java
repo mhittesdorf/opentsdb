@@ -230,9 +230,9 @@ final class CliQuery {
         plotoptions.add(args[i++]);
       }
       final Query query = tsdb.newQuery();
-      query.setStartTime(start_ts);
+      query.setStartTime(start_ts * 1000);
       if (end_ts > 0) {
-        query.setEndTime(end_ts);
+        query.setEndTime(end_ts * 1000);
       }
       query.setTimeSeries(metric, tags, agg, rate);
       if (downsample) {

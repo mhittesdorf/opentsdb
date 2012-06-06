@@ -172,14 +172,15 @@ final class RowSeq implements DataPoints {
 
   /**
    * Checks whether a time delta is short enough for a {@link RowSeq}.
-   * @param time_delta A time delta in seconds.
+   * @param time_delta A time delta in milliseconds.
    * @return {@code true} if the delta is small enough that two data points
    * separated by the time delta can fit together in the same {@link RowSeq},
    * {@code false} if they're distant enough in time that they must go in
    * different {@link RowSeq} instances.
    */
   static boolean canTimeDeltaFit(final long time_delta) {
-    return time_delta < 1 << (Long.SIZE - Const.FLAG_BITS);
+    //return time_delta < 1 << (Integer.SIZE - Const.FLAG_BITS);
+	return false;  //WANT ALL ROWS RETURNED!!!
   }
 
   /**
