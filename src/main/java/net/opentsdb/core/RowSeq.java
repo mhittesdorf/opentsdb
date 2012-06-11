@@ -283,7 +283,7 @@ final class RowSeq implements DataPoints {
 
   public boolean isInteger(final int i) {
     checkIndex(i);
-    return (qualifiers[i * 4 + 1] & Const.FLAG_FLOAT) == 0x0;
+    return (qualifiers[i * 4 + 3] & Const.FLAG_FLOAT) == 0x0;
   }
 
   public long longValue(int i) {
@@ -336,7 +336,7 @@ final class RowSeq implements DataPoints {
        .append("), base_time=")
        .append(base_time)
        .append(" (")
-       .append(base_time > 0 ? new Date(base_time * 1000) : "no date")
+       .append(base_time > 0 ? new Date(base_time) : "no date")
        .append("), [");
     for (short i = 0; i < size; i++) {
       final int qual = Bytes.getInt(qualifiers, i * 4);

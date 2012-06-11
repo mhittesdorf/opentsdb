@@ -40,6 +40,7 @@
       <includes>
        <include>mygnuplot.sh</include>
        <include>create_table.sh</include>
+       <include>start.sh</include>
        </includes>
       <fileMode>755</fileMode>
     </fileSet>
