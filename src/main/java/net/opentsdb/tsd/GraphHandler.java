@@ -188,7 +188,7 @@ final class GraphHandler implements HttpRpc {
       if (query.hasQueryStringParam("exact")) {
     	  exact= true;
       }
-      respondAsciiQuery(query, max_age, basepath, plot, start_time, end_time, exact);
+      respondAsciiQuery(query, max_age, basepath, plot, start_time * 1000, end_time * 1000, exact);
       return;
     }
 
@@ -793,7 +793,7 @@ final class GraphHandler implements HttpRpc {
         }
         for (final DataPoint d : dp) {
           if (exact) {
-        	  if (d.timestamp() < (startTime * 1000) || d.timestamp() > ((endTime + 1) * 1000)) continue;
+        	  if (d.timestamp() < startTime || d.timestamp() > endTime) continue;
           }
           asciifile.print(metric);
           asciifile.print(' ');
