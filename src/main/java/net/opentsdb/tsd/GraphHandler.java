@@ -849,6 +849,12 @@ final class GraphHandler implements HttpRpc {
       final Query tsdbquery = tsdb.newQuery();
       try {
         tsdbquery.setTimeSeries(metric, parsedtags, agg, rate);
+        final List<String> exact = query.getQueryStringParams("exact");
+        if (exact != null) {
+        	tsdbquery.setExact(true);
+        } else {
+        	tsdbquery.setExact(false);
+        }
       } catch (NoSuchUniqueName e) {
         throw new BadRequestException(e.getMessage());
       }

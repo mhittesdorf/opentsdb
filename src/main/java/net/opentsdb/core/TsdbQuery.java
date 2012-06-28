@@ -110,6 +110,9 @@ final class TsdbQuery implements Query {
 
   /** Minimum time interval (in seconds) wanted between each data point. */
   private int sample_interval;
+  
+  /** If true then don't extend range of time series beyond that specified in query **/
+  private boolean exact = false;
 
   /** Constructor. */
   public TsdbQuery(final TSDB tsdb) {
@@ -161,6 +164,10 @@ final class TsdbQuery implements Query {
     this.tags = Tags.resolveAll(tsdb, tags);
     aggregator = function;
     this.rate = rate;
+  }
+  
+  public void setExact(boolean exact) {
+	  this.exact = exact;
   }
 
   public void downsample(final int interval, final Aggregator downsampler) {
@@ -372,10 +379,10 @@ final class TsdbQuery implements Query {
     // rely on having a few extra data points before & after the exact start
     // & end dates in order to do proper rate calculation or downsampling near
     // the "edges" of the graph.
-    Bytes.setInt(start_row, (int) (getScanStartTime()/1000), metric_width);
+    Bytes.setInt(start_row, (int) (getScanStartTime()/1000 - Const.MAX_TIMESPAN/1000), metric_width);
     Bytes.setInt(end_row, (end_time == UNSET
                            ? -1  // Will scan until the end (0xFFF...).
-                           : (int) (getScanEndTime()/1000)),
+                           : (int) (getScanEndTime()/1000 + (Const.MAX_TIMESPAN+1000)/1000)),
                  metric_width);
     System.arraycopy(metric, 0, start_row, 0, metric_width);
     System.arraycopy(metric, 0, end_row, 0, metric_width);
@@ -404,7 +411,7 @@ final class TsdbQuery implements Query {
     // but this doesn't really matter.
     // Additionally, in case our sample_interval is large, we need to look
     // even further before/after, so use that too.
-    final long ts = getStartTime() - (Const.MAX_TIMESPAN * 2 - sample_interval*1000);
+    final long ts = (!exact ? (getStartTime() - (Const.MAX_TIMESPAN * 2 - sample_interval*1000)) : getStartTime());
 	return ts > 0 ? ts : 0;
   }
 
@@ -418,7 +425,7 @@ final class TsdbQuery implements Query {
     // again that doesn't really matter.
     // Additionally, in case our sample_interval is large, we need to look
     // even further before/after, so use that too.
-    return getEndTime() + (Const.MAX_TIMESPAN + 1000) + sample_interval*1000;
+    return (!exact ? (getEndTime() + (Const.MAX_TIMESPAN + 1000) + sample_interval*1000) : getEndTime()+1000);
   }
 
   /**
