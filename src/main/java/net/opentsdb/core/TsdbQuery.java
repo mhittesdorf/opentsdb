@@ -111,9 +111,6 @@ final class TsdbQuery implements Query {
   /** Minimum time interval (in seconds) wanted between each data point. */
   private int sample_interval;
   
-  /** If true then don't extend range of time series beyond that specified in query **/
-  private boolean exact = false;
-
   /** Constructor. */
   public TsdbQuery(final TSDB tsdb) {
     this.tsdb = tsdb;
