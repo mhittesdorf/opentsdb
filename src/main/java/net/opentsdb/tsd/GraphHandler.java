@@ -793,7 +793,7 @@ final class GraphHandler implements HttpRpc {
         }
         for (final DataPoint d : dp) {
           if (exact) {
-        	  if (d.timestamp() < (startTime * 1000) || d.timestamp() > (endTime * 1000)) continue;
+        	  if (d.timestamp() < (startTime * 1000) || d.timestamp() > ((endTime + 1) * 1000)) continue;
           }
           asciifile.print(metric);
           asciifile.print(' ');
