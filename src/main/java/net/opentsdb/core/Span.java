@@ -84,7 +84,7 @@ final class Span implements DataPoints {
    * @throws IllegalArgumentException if the argument represents a row for
    * data points that are older than those already added to this span.
    */
-  void addRow(final KeyValue row) {
+  boolean addRow(final KeyValue row) {
     long last_ts = 0;
     if (rows.size() != 0) {
       // Verify that we have the same metric id and tags.
@@ -93,7 +93,7 @@ final class Span implements DataPoints {
       final short metric_width = tsdb.metrics.width();
       final short tags_offset = (short) (metric_width + Const.TIMESTAMP_BYTES);
       final short tags_bytes = (short) (key.length - tags_offset);
-      String error = null;
+       String error = null;
       if (key.length != last.key.length) {
         error = "row key length mismatch";
       } else if (Bytes.memcmp(key, last.key, 0, metric_width) != 0) {
@@ -119,16 +119,20 @@ final class Span implements DataPoints {
       //  last.addRow(row);
       //  return;
       //}
+      
+     
     }
 
     final RowSeq rowseq = new RowSeq(tsdb);
-    rowseq.setRow(row);
+    rowseq.setRow(row);   
+    
     if (last_ts >= rowseq.timestamp(0)) {
       LOG.error("New RowSeq added out of order to this Span! Last = " +
                 rows.get(rows.size() - 1) + ", new = " + rowseq);
-      return;
+      return false;
     }
     rows.add(rowseq);
+    return true;
   }
 
   /**

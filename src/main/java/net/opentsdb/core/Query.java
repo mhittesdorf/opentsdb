@@ -104,12 +104,4 @@ public interface Query {
    */
   DataPoints[] run() throws HBaseException;
   
-  /**
-   * Sets flag that determines whether or not the time series interval should be expanded before 
-   * after specified start and end times. Default is to extend the series to allow GnuPlot to
-   * render time series correctly at the edges.
-   * @param exact Whether to query the database and return just the points between start and end or not 
-   * 
-   */
-  public void setExact(boolean exact);
 }

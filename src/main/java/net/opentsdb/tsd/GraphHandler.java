@@ -184,7 +184,11 @@ final class GraphHandler implements HttpRpc {
     tsdbqueries = null;  // free()
 
     if (query.hasQueryStringParam("ascii")) {
-      respondAsciiQuery(query, max_age, basepath, plot);
+      boolean exact = false;
+      if (query.hasQueryStringParam("exact")) {
+    	  exact= true;
+      }
+      respondAsciiQuery(query, max_age, basepath, plot, start_time, end_time, exact);
       return;
     }
 
@@ -766,7 +770,10 @@ final class GraphHandler implements HttpRpc {
   private static void respondAsciiQuery(final HttpQuery query,
                                         final int max_age,
                                         final String basepath,
-                                        final Plot plot) {
+                                        final Plot plot,
+                                        final long startTime,
+                                        final long endTime,
+                                        final boolean exact) {
     final String path = basepath + ".txt";
     PrintWriter asciifile;
     try {
@@ -785,6 +792,9 @@ final class GraphHandler implements HttpRpc {
             .append('=').append(tag.getValue());
         }
         for (final DataPoint d : dp) {
+          if (exact) {
+        	  if (d.timestamp() < (startTime * 1000) || d.timestamp() > (endTime * 1000)) continue;
+          }
           asciifile.print(metric);
           asciifile.print(' ');
           asciifile.print(d.timestamp());
@@ -849,12 +859,6 @@ final class GraphHandler implements HttpRpc {
       final Query tsdbquery = tsdb.newQuery();
       try {
         tsdbquery.setTimeSeries(metric, parsedtags, agg, rate);
-        final List<String> exact = query.getQueryStringParams("exact");
-        if (exact != null) {
-        	tsdbquery.setExact(true);
-        } else {
-        	tsdbquery.setExact(false);
-        }
       } catch (NoSuchUniqueName e) {
         throw new BadRequestException(e.getMessage());
       }
